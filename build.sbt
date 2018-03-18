@@ -1,8 +1,10 @@
 lazy val akkaHttpVersion = "10.0.11"
 lazy val akkaVersion = "2.5.8"
-
-
+parallelExecution in Test := false
 // sbt-assembly
+
+resolvers += "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
+
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
@@ -19,12 +21,15 @@ lazy val root = (project in file(".")).
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
       "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
-      "org.scalatest" %% "scalatest" % "3.0.1" % Test,
+      "org.specs2" %% "specs2-core" % "4.0.2" % "test",
       "com.typesafe.slick" %% "slick" % "3.2.1",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
       "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
-      "mysql" % "mysql-connector-java" % "5.1.16",
-      "com.h2database"  %  "h2"        % "1.4.177"
+      "mysql" % "mysql-connector-java" % "5.1.45",
+      "com.h2database" % "h2" % "1.4.177",
+      "io.igl" %% "jwt" % "1.2.2",
+      "org.mindrot" % "jbcrypt" % "0.4",
+      "ch.lightshed" %% "courier" % "0.1.4"
     )
   )
 

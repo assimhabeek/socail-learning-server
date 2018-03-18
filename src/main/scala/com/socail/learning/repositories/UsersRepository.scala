@@ -1,29 +1,42 @@
 package com.socail.learning.repositories
 
-import com.socail.learning.domain.DomainConfig.Db
-import com.socail.learning.domain.UserDomain.{User, UsersTable}
+import javax.mail.internet.InternetAddress
+
+import com.socail.learning.domain.User
+import com.socail.learning.schema.UsersSchema
+import com.socail.learning.util.Mail
+import courier.Text
+import org.mindrot.jbcrypt.BCrypt
 import slick.basic.DatabaseConfig
-import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
-class UsersRepository(val config: DatabaseConfig[JdbcProfile])
-  extends Db with UsersTable {
+class UsersRepository(override val config: DatabaseConfig[JdbcProfile]) extends BaseRepository[User](config) with UsersSchema {
 
   import config.profile.api._
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def init(): Future[Unit] = db.run(DBIOAction.seq(users.schema.create))
+  override def schema(): TableQuery[BasicRow] = {
+    users.asInstanceOf[TableQuery[BasicRow]]
+  }
 
-  def drop(): Future[Unit] = db.run(DBIOAction.seq(users.schema.drop))
+  override def insert(item: User): Future[Option[Int]] = {
+    item.password = BCrypt.hashpw(item.password, BCrypt.gensalt())
+    super.insert(item) map { x =>
+      sendRegistrationEmail(item, x)
+      x
+    }
+  }
 
-  def insert(user: User): Future[User] =
-    db.run(users returning users.map(_.id) += user)
-      .map(id => user.copy(id = Some(id)))
+  def sendRegistrationEmail(user: User, id: Option[Int]): Unit = {
+    Mail.sendMail(new InternetAddress(user.email.get),
+      "NTIC S L email Verification",
+      Text(s"your id is ${id.get}"))
+  }
 
-  def find(id: Int): Future[Option[User]] = db.run(users.filter(_.id === id).result.headOption)
-
-  def findAll(): Future[Seq[User]] = db.run(users.result)
+  def findBy(username: String, password: String): Future[Option[User]] =
+    db.run(users.filter(_.username === username).result
+      map (_.headOption.filter(x => BCrypt.checkpw(password, x.password))))
 
 }
