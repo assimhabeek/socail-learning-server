@@ -1,4 +1,6 @@
 package com.socail.learning.domain
 
-class BasicEntity(id: Option[Int])
+trait BasicEntity {
+  val id: Option[Int]
+}
 

@@ -1,11 +1,10 @@
-package com.socail.learning.routes
+package com.socail.learning.util
 
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model.{StatusCodes, HttpResponse}
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.{ HttpResponse, StatusCodes }
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{Directive0, Route}
-
+import akka.http.scaladsl.server.{ Directive0, Route }
 
 trait CorsSupport {
 

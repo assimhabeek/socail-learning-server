@@ -1,9 +1,8 @@
 package com.socail.learning.repositories
 
-import com.socail.learning.domain.BasicEntity
+import com.socail.learning.schema.SocialSchema
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.socail.learning.schema.BasicSchema
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
@@ -11,31 +10,59 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.Future
 
 abstract class BaseRepository[T](val config: DatabaseConfig[JdbcProfile])
-    extends BasicSchema[T] {
+    extends SocialSchema {
 
   import config.profile.api._
 
-  def schema(): TableQuery[BasicRow]
+  def schema(): TableQuery[BasicRow[T]]
 
-  def init(): Future[Unit] = db.run(DBIOAction.seq(schema().schema.create))
+  def init(): Future[Unit] = db.run(DBIOAction.seq(schema().schema.create)).recover {
+    case e: Exception =>
+      println(e.getMessage)
+  }
 
-  def drop(): Future[Unit] = db.run(DBIOAction.seq(schema().schema.drop))
+  def drop(): Future[Unit] = db.run(DBIOAction.seq(schema().schema.drop)).recover {
+    case e: Exception =>
+      println(e.getMessage)
+  }
 
-  def findById(id: Int): Future[Option[T]] =
-    db.run(schema().filter(_.id === id).result.headOption)
+  def findById(id: Int): Future[Option[T]] = db.run(schema().filter(_.id === id).result.headOption).recover {
+    case e: Exception =>
+      println(e.getMessage)
+      None
+  }
 
-  def findAll(): Future[Seq[T]] = db.run(schema().result)
+  def findAll(): Future[Seq[T]] = db.run(schema().result).recover {
+    case e: Exception =>
+      println(e.getMessage)
+      Seq()
+  }
 
-  def insert(item: T): Future[Option[Int]] = db.run(schema() returning schema().map(_.id) += item)
+  def insert(item: T): Future[Option[Int]] =
+    db.run(schema() returning schema().map(_.id) += item).recover {
+      case e: Exception =>
+        println(e.getMessage)
+        Some(-1)
+    }
 
-  def update(item: T): Future[Int] = db.run(schema().update(item))
+  def update(id: Int, item: T): Future[Int] = db.run(schema().filter(_.id === id).update(item)).recover {
+    case e: Exception =>
+      println(e.getMessage)
+      -1
+  }
 
   def delete(id: Int): Future[Boolean] =
-    db.run(schema().filter(_.id === id).delete) map {
-      _ > 0
+    db.run(schema().filter(_.id === id).delete).map(_ > 0).recover {
+      case e: Exception =>
+        println(e.getMessage)
+        false
     }
 
   def count(): Future[Int] = {
-    db.run(schema().length.result)
+    db.run(schema().length.result).recover {
+      case e: Exception =>
+        println(e.getMessage)
+        -1
+    }
   }
 }

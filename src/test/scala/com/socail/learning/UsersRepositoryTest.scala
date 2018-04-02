@@ -3,7 +3,7 @@ package com.socail.learning
 import com.socail.learning.domain.DomainConfig.DbConfiguration
 import com.socail.learning.domain.User
 import com.socail.learning.repositories.UsersRepository
-import com.socail.learning.schema.UsersSchema
+import com.socail.learning.schema.SocialSchema
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.matcher.{ FutureMatchers, OptionMatchers }
 import org.specs2.mutable.Specification
@@ -17,7 +17,7 @@ class UsersRepositoryTest extends Specification with DbConfiguration
     with FutureMatchers
     with OptionMatchers
     with BeforeAfterEach
-    with UsersSchema {
+    with SocialSchema {
 
   import config.profile.api._
 
@@ -61,7 +61,6 @@ class UsersRepositoryTest extends Specification with DbConfiguration
     user must beSome((x: User) => x.username mustEqual username)
     user must beSome((x: User) => BCrypt.checkpw(password, x.password))
   }
-*/
 
   "should refuse user by returning None" >> {
     val username = "test-01"
@@ -71,5 +70,5 @@ class UsersRepositoryTest extends Specification with DbConfiguration
     val user = Await.result(repo.findBy(username, "fsdaf" + password), Duration.Inf)
     user must beNone
   }
-
+*/
 }

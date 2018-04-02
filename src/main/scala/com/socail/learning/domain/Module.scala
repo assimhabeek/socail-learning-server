@@ -1,10 +1,11 @@
 package com.socail.learning.domain
 
-case class Specialty(
+case class Module(
   id: Option[Int],
   abb: String,
-  name: String,
-  from: Int,
-  to: Int
+  name: Option[String],
+  spcailtyId: Int,
+  year: Int,
+  semmster: Int
 ) extends BasicEntity
 

@@ -1,10 +1,8 @@
 package com.socail.learning.domain
 
-case class Specialty(
+case class Category(
   id: Option[Int],
-  abb: String,
-  name: String,
-  from: Int,
-  to: Int
+  title: String,
+  description: String
 ) extends BasicEntity
 

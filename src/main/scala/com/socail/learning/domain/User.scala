@@ -6,9 +6,12 @@ case class User(
   var password: String,
   firstName: Option[String],
   lastName: Option[String],
+  about: Option[String],
   email: Option[String],
   year: Option[Int],
   specialtyId: Option[Int],
-  isAdmin: Option[Boolean]
-) extends BasicEntity(id)
+  profileImage: Option[Array[Byte]],
+  isAdmin: Option[Boolean],
+  verified: Option[Boolean]
+) extends BasicEntity
 
