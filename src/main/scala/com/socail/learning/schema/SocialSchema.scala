@@ -68,11 +68,12 @@ trait SocialSchema extends Db {
 
   class CategoryRow(tag: Tag) extends BasicRow[Category](tag, "CATEGORIES") {
 
-    def title = column[String]("DESCRIPTION", O.Length(150))
-
+    def title = column[String]("TITLE", O.Length(150))
     def description = column[String]("DESCRIPTION", O.Length(150))
 
-    def * = (id, title, description) <> (Category.tupled, Category.unapply)
+    def icon = column[String]("ICON", O.Length(150))
+
+    def * = (id, title, description, icon) <> (Category.tupled, Category.unapply)
 
   }
 

@@ -64,7 +64,7 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
                 concat(
                   parameters('token) { token =>
                     complete(if (validateRegistrationToken(token)) {
-                      usersRepo.validateUserAccount(user.id.get) map { id => (StatusCodes.OK, createLoginToken(user.copy(verified = Some(true)))) }
+                      usersRepo.validateAccount(user.id.get) map { id => (StatusCodes.OK, createLoginToken(user.copy(verified = Some(true)))) }
                     } else (StatusCodes.Unauthorized, "TOKEN_INVALID"))
                   },
                   path("sendEmail") {

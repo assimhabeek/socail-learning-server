@@ -9,7 +9,7 @@ trait JsonSupport extends SprayJsonSupport {
   import SLProtocal._
 
   implicit val specialtyJsonFormat: RootJsonFormat[Specialty] = jsonFormat5(Specialty)
-  implicit val categoryJsonFormat: RootJsonFormat[Category] = jsonFormat3(Category)
+  implicit val categoryJsonFormat: RootJsonFormat[Category] = jsonFormat4(Category)
   implicit val moduleJsonFormat: RootJsonFormat[Module] = jsonFormat6(Module)
   implicit val attachmentJsonFormat: RootJsonFormat[Attachment] = jsonFormat4(Attachment)
   implicit val commentJsonFormat: RootJsonFormat[Comment] = jsonFormat7(Comment)

@@ -2,37 +2,45 @@ package com.socail.learning.actor
 
 import akka.actor.{ Actor, ActorRef }
 import com.socail.learning.domain.Publication
+import spray.json.JsValue
 
 import scala.collection.mutable
 
 trait PublicationEvent
 
-case class UserJoined(id: Int, actorRef: ActorRef) extends PublicationEvent
+case class PublicationUserJoined(id: Int, actorRef: ActorRef) extends PublicationEvent
 
-case class UserLeft(id: Int) extends PublicationEvent
+case class PublicationUserLeft(id: Int) extends PublicationEvent
 
-case class PublicationAdded(publication: Publication) extends PublicationEvent
+case class PublicationAddedOrUpdated(publication: JsValue) extends PublicationEvent
 
-case class MessageRecived(message: String) extends PublicationEvent
+case class PublicationDeleted(id: Int) extends PublicationEvent
 
-case class IdWithActor(id: Int, actor: ActorRef)
+case class PublicationMessageReceived(message: String) extends PublicationEvent
+
+case class PublicationIdWithActor(id: Int, actor: ActorRef)
 
 class PublicationAreaActor extends Actor {
 
-  val users: mutable.LinkedHashMap[Int, IdWithActor] = collection.mutable.LinkedHashMap[Int, IdWithActor]()
+  val users: mutable.LinkedHashMap[Int, PublicationIdWithActor] = collection.mutable.LinkedHashMap[Int, PublicationIdWithActor]()
 
   override def receive: Receive = {
-    case UserJoined(id, actor) =>
-      users += (id -> IdWithActor(id, actor))
-    case UserLeft(id) =>
+    case PublicationUserJoined(id, actor) =>
+      users += (id -> PublicationIdWithActor(id, actor))
+    case PublicationUserLeft(id) =>
       users -= id
-    case PublicationAdded(publication) => notifyPublicationAdded(publication)
-    case MessageRecived(message) =>
+    case PublicationAddedOrUpdated(publication) => notifyPublicationAdded(publication)
+    case PublicationDeleted(id) => notifyPublicationDeleted(id)
+    case PublicationMessageReceived(message) =>
       println(message)
   }
 
-  def notifyPublicationAdded(publication: Publication): Unit = {
-    users.values.foreach(_.actor ! PublicationAdded(publication))
+  def notifyPublicationAdded(publication: JsValue): Unit = {
+    users.values.foreach(_.actor ! PublicationAddedOrUpdated(publication))
+  }
+
+  def notifyPublicationDeleted(id: Int): Unit = {
+    users.values.foreach(_.actor ! PublicationDeleted(id))
   }
 
 }

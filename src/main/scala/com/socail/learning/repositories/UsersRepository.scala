@@ -52,7 +52,7 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
     )
   }
 
-  def validateUserAccount(id: Int): Future[Int] = {
+  def validateAccount(id: Int): Future[Int] = {
     val query = for { c <- users if c.id === id } yield c.verified
     val action = query.update(Some(true))
     db.run(action)

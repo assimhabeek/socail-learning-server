@@ -9,7 +9,7 @@ case class Publication(
   date: Timestamp,
   userId: Int,
   commentable: Option[Boolean],
-  categorieId: Int,
+  categoryId: Int,
   specialtyId: Option[Int],
   moduleId: Option[Int]
 ) extends Contribution

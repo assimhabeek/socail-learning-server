@@ -28,7 +28,7 @@ object AttachmentsRoutes extends JsonSupport with AuthenticationHandler {
           concat(
             post {
               entity(as[Attachment]) { attachment =>
-                complete((StatusCodes.OK, attachmentsRepo.insert(attachment).map(x => s"$x")))
+                complete((StatusCodes.OK, attachmentsRepo.insert(attachment).map(x => s"${x.get}")))
               }
             },
             put {

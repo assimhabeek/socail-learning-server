@@ -12,7 +12,8 @@ class PublicationsRepository(override val config: DatabaseConfig[JdbcProfile])
 
   import config.profile.api._
 
-  val publicationsPaged = Compiled((d: ConstColumn[Long]) => publications.sortBy(_.date.desc).drop(d).take(10) join users on (_.userId === _.id))
+  val publicationsPaged = Compiled((d: ConstColumn[Long]) =>
+    (publications join users on (_.userId === _.id)).sortBy(x => x._1.date.desc).drop(d).take(10))
 
   override def schema(): TableQuery[BasicRow[Publication]] =
     publications.asInstanceOf[TableQuery[BasicRow[Publication]]]
@@ -25,4 +26,16 @@ class PublicationsRepository(override val config: DatabaseConfig[JdbcProfile])
     }
   }
 
+  override def delete(id: Int) = {
+    val seq: DBIOAction[Unit, NoStream, Effect.Write] = DBIO.seq(
+      comments.filter(_.publicationId === id).delete,
+      attachments.filter(_.publicationId === id).delete,
+      publications.filter(_.id === id).delete
+    )
+    db.run(seq).map(_ => true).recover {
+      case e: Exception =>
+        println(e.getMessage)
+        false
+    }
+  }
 }
