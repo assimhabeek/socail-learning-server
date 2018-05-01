@@ -37,11 +37,13 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
       concat(
         get {
           concat(
-            parameter('page) { page =>
-              val databaseRecords: Future[Seq[JsObject]] = publicationsRepo.findByPage(toInt(page).getOrElse(0)) map {
-                _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject)))
-              }
-              complete((StatusCodes.OK, databaseRecords))
+            parameter('page, 'filter.?, 'date.?, 'category.?, 'specialty.?, 'module.?, 'year.?) {
+              (page, filter, date, category, specialty, module, year) =>
+                val databaseRecords: Future[Seq[JsObject]] =
+                  publicationsRepo.findByPage(toInt(page).getOrElse(0), filter, date, category, specialty, module, year) map {
+                    _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
+                  }
+                complete((StatusCodes.OK, databaseRecords))
             },
             parameter('id) { id =>
               complete((StatusCodes.OK, publicationsRepo.findById(toInt(id).getOrElse(0))))
@@ -56,7 +58,7 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
           concat(
             post {
               entity(as[Publication]) { publication =>
-                if (user.id.get == publication.userId){
+                if (user.id.get == publication.userId) {
                   complete((StatusCodes.OK, publicationsRepo.insert(publication).map(x => {
                     usersRepo.findById(publication.userId)
                       .map(user => {
@@ -66,7 +68,7 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
                         s"${x.get}"
                       })
                   })))
-				}
+                }
                 else
                   complete(StatusCodes.Unauthorized, "")
               }

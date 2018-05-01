@@ -8,6 +8,5 @@ case class Comment(
   date: Timestamp,
   userId: Int,
   publicationId: Int,
-  points: Option[Int],
   bestAnswer: Option[Boolean]
 ) extends Contribution

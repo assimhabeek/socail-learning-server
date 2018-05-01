@@ -19,7 +19,13 @@ object ModulesRoutes extends JsonSupport with AuthenticationHandler {
     path("modules") {
       concat(
         get {
-          complete((StatusCodes.OK, modulesRepo.findAll()))
+          concat(
+            parameter('specialtyId) { spId =>
+              complete(StatusCodes.OK, modulesRepo.findBySpecialty(toInt(spId).getOrElse(0)))
+            },
+            pathEnd {
+              complete(StatusCodes.OK, modulesRepo.findAll())
+            })
         },
         authenticatedAdmin { admin =>
           concat(

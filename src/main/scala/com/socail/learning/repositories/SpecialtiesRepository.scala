@@ -5,13 +5,13 @@ import com.socail.learning.schema.SocialSchema
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SpecialtiesRepository(override val config: DatabaseConfig[JdbcProfile])
     extends BaseRepository[Specialty](config) {
 
   import config.profile.api._
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   override def schema(): TableQuery[BasicRow[Specialty]] =
     specialties.asInstanceOf[TableQuery[BasicRow[Specialty]]]

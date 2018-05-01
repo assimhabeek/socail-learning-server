@@ -11,7 +11,7 @@ import akka.stream.{FlowShape, OverflowStrategy}
 import com.socail.learning.SocialLearningServer.{config, system}
 import com.socail.learning.actor._
 import com.socail.learning.domain.Comment
-import com.socail.learning.repositories.{CommentsRepository, UsersRepository}
+import com.socail.learning.repositories.{CommentsRepository, PublicationsRepository, UsersRepository}
 import com.socail.learning.util.SLProtocal._
 import com.socail.learning.util.{AuthenticationHandler, JsonSupport}
 import spray.json._
@@ -23,6 +23,7 @@ object CommentsRoutes extends JsonSupport with AuthenticationHandler {
   val commentAreaActor = system.actorOf(Props(new CommentAreaActor()))
   val userActorSource = Source.actorRef[CommentEvent](5, OverflowStrategy.fail)
   lazy val usersRepo = new UsersRepository(config)
+  lazy val publicationsRepo = new PublicationsRepository(config)
 
   lazy val commentsRepo = new CommentsRepository(config)
   var userId = 0
@@ -47,20 +48,40 @@ object CommentsRoutes extends JsonSupport with AuthenticationHandler {
         authenticatedUser { user =>
           concat(
             post {
-              entity(as[Comment]) { comment =>
-                if (user.id.get == comment.userId)
-                  complete((StatusCodes.OK, commentsRepo.insert(comment).map(x => {
-                    usersRepo.findById(comment.userId)
-                      .map(use => {
-                        val us = use.get.toJson
-                        val com = comment.toJson.asJsObject.fields
-                        commentAreaActor ! CommentAddedOrUpdated(JsObject(com + ("user" -> us.toJson)))
-                        s"$x"
-                      })
-                  })))
-                else
-                  complete(StatusCodes.Unauthorized, "")
-              }
+              concat(
+                pathSuffix("markBest") {
+                  parameter('publicationId, 'commentId) { (pubId, commId) =>
+                    val publId = toInt(pubId).getOrElse(0)
+                    val currentUserId = user.id.get
+                    complete(publicationsRepo.findById(publId).map {
+                      case Some(pub) => pub.userId match {
+                        case `currentUserId` =>
+                          commentsRepo.markAsBes(publId, toInt(commId).getOrElse(0))
+                          (StatusCodes.OK, "")
+                        case _ => (StatusCodes.Unauthorized, "")
+                      }
+                      case None => (StatusCodes.NotFound, "")
+                    })
+                  }
+                },
+                pathEnd {
+
+                  entity(as[Comment]) { comment =>
+                    if (user.id.get == comment.userId)
+                      complete((StatusCodes.OK, commentsRepo.insert(comment).map(x => {
+                        usersRepo.findById(comment.userId)
+                          .map(use => {
+                            val us = use.get.toJson
+                            val com = comment.toJson.asJsObject.fields
+                            commentAreaActor ! CommentAddedOrUpdated(JsObject(com + ("user" -> us.toJson)))
+                            s"$x"
+                          })
+                      })))
+                    else
+                      complete(StatusCodes.Unauthorized, "")
+                  }
+                }
+              )
             },
             put {
               entity(as[Comment]) { comment =>

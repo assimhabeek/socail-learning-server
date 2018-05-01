@@ -69,6 +69,7 @@ trait SocialSchema extends Db {
   class CategoryRow(tag: Tag) extends BasicRow[Category](tag, "CATEGORIES") {
 
     def title = column[String]("TITLE", O.Length(150))
+
     def description = column[String]("DESCRIPTION", O.Length(150))
 
     def icon = column[String]("ICON", O.Length(150))
@@ -131,15 +132,35 @@ trait SocialSchema extends Db {
 
   val publications: TableQuery[PublicationRow] = TableQuery[PublicationRow]
 
+  class OpinionRow(tag: Tag) extends BasicRow[Opinion](tag, "OPINION") {
+
+    def userId = column[Int]("USER_ID")
+
+    def publicationId = column[Int]("PUBLICATION_ID")
+
+    def opinion = column[Int]("OPINION")
+
+    def description = column[Option[String]]("DESCRIPTION")
+
+    def publication = foreignKey("OPINION_PUB_FK", publicationId, publications)(_.id.get)
+
+    def user = foreignKey("OPINION_USER_FK", userId, users)(_.id.get)
+
+    def * = (id, userId, publicationId, opinion, description) <> (Opinion.tupled, Opinion.unapply)
+
+  }
+
+  val opinions: TableQuery[OpinionRow] = TableQuery[OpinionRow]
+
   class AttachmentRow(tag: Tag) extends BasicRow[Attachment](tag, "ATTACHMENTS") {
 
     def name = column[String]("NAME", O.Length(150))
 
     def link = column[String]("link")
 
-    def publicationId = column[Int]("publicationId")
+    def publicationId = column[Int]("PUBLICATION_ID")
 
-    def publication = foreignKey("ATT_SPE_FK", publicationId, publications)(_.id.get)
+    def publication = foreignKey("ATT_PUB_FK", publicationId, publications)(_.id.get)
 
     def * = (id, name, link, publicationId) <> (Attachment.tupled, Attachment.unapply)
 
@@ -157,15 +178,13 @@ trait SocialSchema extends Db {
 
     def publicationId = column[Int]("PUBLICATION_ID")
 
-    def points = column[Option[Int]]("POINTS")
-
     def bestAnswer = column[Option[Boolean]]("BEST_ANSWER")
 
     def user = foreignKey("USE_COM_FK", userId, users)(_.id.get)
 
     def publication = foreignKey("PUB_COM_FK", publicationId, publications)(_.id.get)
 
-    def * = (id, description, date, userId, publicationId, points, bestAnswer) <> (Comment.tupled, Comment.unapply)
+    def * = (id, description, date, userId, publicationId, bestAnswer) <> (Comment.tupled, Comment.unapply)
 
   }
 

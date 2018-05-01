@@ -110,13 +110,17 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
           }
         )
       },
-      path("users") {
+      pathPrefix("users") {
         concat(
           get {
-            isLoggedIn {
-              user =>
+            concat(
+             pathSuffix("all"){
+               complete((StatusCodes.OK,usersRepo.findAll()))
+             },
+             isLoggedIn {user =>
                 complete((StatusCodes.OK, usersRepo.findById(user.id.getOrElse(0))))
-            }
+             }
+            )
           },
           authenticatedUser { authUser =>
             concat(

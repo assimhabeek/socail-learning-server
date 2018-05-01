@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.socail.learning.domain.DomainConfig.DbConfiguration
 import com.socail.learning.routes._
+import com.socail.learning.schema.InitSchema
 import com.socail.learning.util.CorsSupport
 
 import scala.concurrent.Await
@@ -28,12 +29,12 @@ object SocialLearningServer extends App
       CategoriesRoutes.routes,
       AttachmentsRoutes.routes,
       CommentsRoutes.routes,
-      PublicationsRoutes.routes
+      PublicationsRoutes.routes,
+      ChatRoutes.routes,
+      OpinionsRoutes.routes
     )
 
-  /*
   new InitSchema(config).init()
-*/
 
   Http().bindAndHandle(corsHandler(routes), "0.0.0.0", 8080)
   println(s"Server online at http://localhost:8080/")

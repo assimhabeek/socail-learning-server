@@ -2,7 +2,7 @@ package com.socail.learning.util
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directive1
-import akka.http.scaladsl.server.Directives.{complete, optionalHeaderValueByName, provide}
+import akka.http.scaladsl.server.Directives.{complete, optionalHeaderValueByName, parameter, provide}
 import com.socail.learning.domain.User
 import io.igl.jwt._
 import play.api.libs.json._
@@ -104,6 +104,15 @@ trait AuthenticationHandler {
   def authenticatedUser: Directive1[User] =
     optionalHeaderValueByName("Authorization").flatMap {
       case Some(jwt) => validateLoginToken(jwt) match {
+        case Some(user) => provide(user)
+        case None => complete(StatusCodes.Unauthorized)
+      }
+      case _ => complete(StatusCodes.Unauthorized)
+    }
+
+  def wsAuthenticatedUser: Directive1[User] =
+    parameter('Authorization).flatMap {
+      case token: String => validateLoginToken(token) match {
         case Some(user) => provide(user)
         case None => complete(StatusCodes.Unauthorized)
       }

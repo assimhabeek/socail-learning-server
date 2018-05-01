@@ -25,4 +25,9 @@ class CommentsRepository(override val config: DatabaseConfig[JdbcProfile])
     }
   }
 
+  def markAsBes(publicationId: Int, id: Int) {
+    val unmarkedQuery = comments.filter { c => c.publicationId === publicationId && c.id =!= id }.map(_.bestAnswer)
+    val markedQuery = comments.filter { c => c.publicationId === publicationId && c.id === id }.map(_.bestAnswer)
+    db.run(unmarkedQuery.update(Some(false)).flatMap(_ => markedQuery.update(Some(true))).transactionally)
+  }
 }
