@@ -1,6 +1,6 @@
 package com.socail.learning.repositories
 
-import com.socail.learning.domain.Opinion
+import com.socail.learning.domain.{ Opinion, OpinionOptions }
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import com.socail.learning.util.JsonSupport
@@ -27,12 +27,21 @@ class OpinionsRepository(override val config: DatabaseConfig[JdbcProfile])
       }
   }
 
-  def insertOrUpdate(item: Opinion): Future[Int] = {
+  def insertOrUpdate(item: Opinion): Future[(Int, Int)] = {
     val query = opinions.filter(x => x.userId === item.userId && x.publicationId === item.publicationId)
-    db.run(query.exists.result.flatMap {
+    val reQuery = opinions.filter(x => x.publicationId === item.publicationId)
+
+    db.run(
+      query.exists.result.flatMap {
       case true => query.map(x => (x.opinion, x.description)).update((item.opinion, item.description))
       case false => opinions returning opinions.map(_.id.get) += item
-    }.transactionally)
+    }.flatMap { y =>
+      (
+        reQuery.filter(_.opinion === OpinionOptions.OPTION_LIKED).length,
+        reQuery.filter(_.opinion === OpinionOptions.OPTION_DISLIKED).length
+      ).result
+    }.transactionally
+    )
   }
 
 }

@@ -1,5 +1,5 @@
-lazy val akkaHttpVersion = "10.0.11"
-lazy val akkaVersion = "2.5.8"
+lazy val akkaHttpVersion = "10.1.1"
+lazy val akkaVersion = "2.5.12"
 parallelExecution in Test := false
 // sbt-assembly
 
@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "com.ti",
-      scalaVersion := "2.12.4"
+      scalaVersion := "2.12.6"
     )),
     name := "social-learning",
     libraryDependencies ++= Seq(
@@ -22,7 +22,7 @@ lazy val root = (project in file(".")).
       "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
       "org.specs2" %% "specs2-core" % "4.0.2" % "test",
-      "com.typesafe.slick" %% "slick" % "3.2.1",
+      "com.typesafe.slick" %% "slick" % "3.2.3",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
       "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
       "mysql" % "mysql-connector-java" % "5.1.45",

@@ -16,7 +16,6 @@ import scala.concurrent.duration.Duration
 object SocialLearningServer extends App
     with DbConfiguration
     with CorsSupport {
-
   implicit val system: ActorSystem = ActorSystem("helloAkkaHttpServer")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
@@ -31,7 +30,9 @@ object SocialLearningServer extends App
       CommentsRoutes.routes,
       PublicationsRoutes.routes,
       ChatRoutes.routes,
-      OpinionsRoutes.routes
+      OpinionsRoutes.routes,
+      FileRoutes.routes,
+      FriendsRoutes.routes
     )
 
   new InitSchema(config).init()

@@ -25,8 +25,8 @@ import scala.concurrent.Future
 
 object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
 
-  val publicationAreaActor = system.actorOf(Props(new PublicationAreaActor()))
-  val userActorSource = Source.actorRef[PublicationEvent](5, OverflowStrategy.fail)
+  val publicationAreaActor: ActorRef = system.actorOf(Props(new PublicationAreaActor()))
+  val userActorSource: Source[PublicationEvent, ActorRef] = Source.actorRef[PublicationEvent](5, OverflowStrategy.fail)
 
   lazy val publicationsRepo = new PublicationsRepository(config)
   lazy val usersRepo = new UsersRepository(config)
@@ -51,7 +51,15 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
             pathSuffix("stream") {
               userId += 1
               handleWebSocketMessages(flow(userId))
+            },
+            authenticatedUser { user =>
+              parameter('fPage) { page =>
+                complete((StatusCodes.OK, publicationsRepo.findByPageAndFriend(toInt(page).getOrElse(0), user.id.get)map {
+                    _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
+                  }))
+              }
             }
+
           )
         },
         authenticatedUser { user =>
@@ -65,7 +73,7 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
                         val us = user.get.toJson
                         val pub = publication.toJson.asJsObject.fields
                         publicationAreaActor ! PublicationAddedOrUpdated(JsObject(pub + ("user" -> us.toJson)))
-                        s"${x.get}"
+                        s"$x"
                       })
                   })))
                 }

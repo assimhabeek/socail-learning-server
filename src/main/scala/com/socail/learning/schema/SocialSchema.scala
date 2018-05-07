@@ -144,13 +144,35 @@ trait SocialSchema extends Db {
 
     def publication = foreignKey("OPINION_PUB_FK", publicationId, publications)(_.id.get)
 
-    def user = foreignKey("OPINION_USER_FK", userId, users)(_.id.get)
+    def user = foreignKey("OPINION_USER_FK", userId, users)(_.id.get, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.Cascade)
+
+    def unique = index("publication_user", (userId, publicationId), unique = true)
 
     def * = (id, userId, publicationId, opinion, description) <> (Opinion.tupled, Opinion.unapply)
 
   }
 
   val opinions: TableQuery[OpinionRow] = TableQuery[OpinionRow]
+
+  class FriendRow(tag: Tag) extends BasicRow[Friend](tag, "FRIEND") {
+
+    def senderId = column[Int]("SENDER_ID")
+
+    def receiverId = column[Int]("RECEIVER_ID")
+
+    def state = column[Int]("STATE")
+
+    def sender = foreignKey("SENDER_USER_FK", senderId, users)(_.id.get)
+
+    def receiver = foreignKey("RECEIVER_USER_FK", receiverId, users)(_.id.get)
+
+    def unique = index("sender_reciver", (senderId, receiverId), unique = true)
+
+    def * = (id, senderId, receiverId, state) <> (Friend.tupled, Friend.unapply)
+
+  }
+
+  val friends: TableQuery[FriendRow] = TableQuery[FriendRow]
 
   class AttachmentRow(tag: Tag) extends BasicRow[Attachment](tag, "ATTACHMENTS") {
 
@@ -160,7 +182,7 @@ trait SocialSchema extends Db {
 
     def publicationId = column[Int]("PUBLICATION_ID")
 
-    def publication = foreignKey("ATT_PUB_FK", publicationId, publications)(_.id.get)
+    def publication = foreignKey("ATT_PUB_FK", publicationId, publications)(_.id.get, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.Cascade)
 
     def * = (id, name, link, publicationId) <> (Attachment.tupled, Attachment.unapply)
 
@@ -182,7 +204,7 @@ trait SocialSchema extends Db {
 
     def user = foreignKey("USE_COM_FK", userId, users)(_.id.get)
 
-    def publication = foreignKey("PUB_COM_FK", publicationId, publications)(_.id.get)
+    def publication = foreignKey("PUB_COM_FK", publicationId, publications)(_.id.get, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.Cascade)
 
     def * = (id, description, date, userId, publicationId, bestAnswer) <> (Comment.tupled, Comment.unapply)
 

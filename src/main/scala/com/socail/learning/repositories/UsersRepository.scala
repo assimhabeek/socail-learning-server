@@ -22,10 +22,10 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
   override def schema(): TableQuery[BasicRow[User]] =
     users.asInstanceOf[TableQuery[BasicRow[User]]]
 
-  override def insert(item: User): Future[Option[Int]] = {
+  override def insert(item: User): Future[Int] = {
     item.password = BCrypt.hashpw(item.password, BCrypt.gensalt())
     super.insert(item) map { x =>
-      sendRegistrationEmail(x.getOrElse(0), item.email.getOrElse(""))
+      sendRegistrationEmail(x, item.email.getOrElse(""))
       x
     }
   }

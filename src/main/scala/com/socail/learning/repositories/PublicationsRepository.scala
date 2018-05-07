@@ -56,16 +56,24 @@ class PublicationsRepository(override val config: DatabaseConfig[JdbcProfile])
     }
   }
 
-  override def delete(id: Int) = {
-    val seq: DBIOAction[Unit, NoStream, Effect.Write] = DBIO.seq(
-      comments.filter(_.publicationId === id).delete,
-      attachments.filter(_.publicationId === id).delete,
-      publications.filter(_.id === id).delete
-    )
-    db.run(seq).map(_ => true).recover {
+
+  def findByPageAndFriend(page: Int, id: Int): Future[Seq[(Publication, User, Int, Int)]] = {
+    db.run(publications.join(users).on((x, y) => x.userId === y.id && y.id =!= id).join(friends).on((x, y) => (x._2.id === y.senderId || x._2.id === y.receiverId) && (y.receiverId === id || y.senderId === id) && y.state === 3)
+      .drop(page * 10).take(10).map(x => {
+      (x._1._1, x._1._2,
+        opinions.filter(y => y.publicationId === x._1._1.id && y.opinion === OpinionOptions.OPTION_LIKED).length,
+        opinions.filter(y => y.publicationId === x._1._1.id && y.opinion === OpinionOptions.OPTION_DISLIKED).length)
+    }).result
+    ).recover {
       case e: Exception =>
         println(e.getMessage)
-        false
+        Seq()
     }
+  }
+
+  def deleteFrequentlyReported() {
+    db.run(publications.filter(pub => {
+      pub.id in opinions.filter(_.opinion === OpinionOptions.OPTION_REPORTED).groupBy(_.publicationId).map { case (id, row) => (id, row.length) }.filter(_._2 >= 40).map(_._1)
+    }).delete)
   }
 }

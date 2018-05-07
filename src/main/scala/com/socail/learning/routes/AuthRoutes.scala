@@ -38,7 +38,7 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
             entity(as[User]) { (user: User) =>
               complete(usersRepo.insert(user) map {
                 x => {
-                  usersRepo.findById(x.getOrElse(0)) map {
+                  usersRepo.findById(x) map {
                     case Some(use) => (StatusCodes.OK, createLoginToken(use))
                     case _ => (StatusCodes.InternalServerError, "")
                   }

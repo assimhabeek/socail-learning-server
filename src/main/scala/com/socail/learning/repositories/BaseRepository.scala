@@ -38,11 +38,11 @@ abstract class BaseRepository[T](val config: DatabaseConfig[JdbcProfile])
       Seq()
   }
 
-  def insert(item: T): Future[Option[Int]] =
-    db.run(schema() returning schema().map(_.id) += item).recover {
+  def insert(item: T): Future[Int] =
+    db.run(schema() returning schema().map(_.id.get) += item).recover {
       case e: Exception =>
         println(e.getMessage)
-        Some(-1)
+        -1
     }
 
   def update(id: Int, item: T): Future[Int] = db.run(schema().filter(_.id === id).update(item)).recover {

@@ -11,14 +11,16 @@ class InitSchema(val config: DatabaseConfig[JdbcProfile]) extends SocialSchema {
 
   def init(): Future[Unit] = {
     val setup = DBIO.seq(
-      (opinions.schema ++
+
+      (friends.schema ++
+      opinions.schema ++
+      publications.schema ++
+      attachments.schema ++
+      comments.schema ++
       specialties.schema ++
       users.schema ++
       categories.schema ++
-      modules.schema ++
-      publications.schema ++
-      comments.schema ++
-      attachments.schema).create
+      modules.schema).create
 
     )
     db.run(setup)
