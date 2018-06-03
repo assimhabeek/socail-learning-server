@@ -7,10 +7,9 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import Directives.{entity, parameters, path, _}
 import com.socail.learning.repositories.UsersRepository
+import com.socail.learning.routes.PublicationsRoutes.publicationsRepo
 import spray.json._
-
 import com.socail.learning.util.SLProtocal._
-
 import org.mindrot.jbcrypt.BCrypt
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -114,12 +113,21 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
         concat(
           get {
             concat(
-             pathSuffix("all"){
-               complete((StatusCodes.OK,usersRepo.findAll()))
-             },
-             isLoggedIn {user =>
+              pathSuffix("all") {
+                complete((StatusCodes.OK, usersRepo.findAll()))
+              },
+              pathSuffix("reported") {
+                complete((StatusCodes.OK, usersRepo.findReported()))
+              },
+              parameters('id) { id =>
+                complete((StatusCodes.OK, usersRepo.findById(toInt(id).getOrElse(0))))
+              },
+              parameters('page, 'filter) { (page, filter) =>
+                complete((StatusCodes.OK, usersRepo.filterUsers(filter, toInt(page).getOrElse(0))))
+              },
+              isLoggedIn { user =>
                 complete((StatusCodes.OK, usersRepo.findById(user.id.getOrElse(0))))
-             }
+              }
             )
           },
           authenticatedUser { authUser =>
@@ -129,9 +137,8 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
                   user =>
                     complete(
                       if (user.id == authUser.id) {
-                        usersRepo.updateUserInfo(user) map {
-                          id =>
-                            (StatusCodes.OK, s"$id")
+                        usersRepo.updateUserInfo(user) map { id =>
+                          (StatusCodes.OK, s"$id")
                         }
                       } else {
                         (StatusCodes.Unauthorized, "")
@@ -140,10 +147,17 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
                 }
               },
               delete {
-                complete(StatusCodes.OK, s"${usersRepo.delete(authUser.id.getOrElse(0))}")
+                parameters('id) { id =>
+                  if (toInt(id).getOrElse(0) == authUser.id.get || authUser.isAdmin.getOrElse(false))
+                    complete(StatusCodes.OK, s"${usersRepo.delete(toInt(id).getOrElse(0))}")
+                  else
+                    complete(StatusCodes.Unauthorized, "")
+
+                }
               }
             )
-          })
+          },
+        )
       }
     )
 }

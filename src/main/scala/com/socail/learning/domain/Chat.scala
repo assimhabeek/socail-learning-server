@@ -4,8 +4,8 @@ import java.sql.Timestamp
 
 case class Chat(
   id: Option[Int],
-  senderId: Int,
-  receiverId: Int,
-  message: Option[String],
-  messageDate: Timestamp
+  message: String,
+  sender: Int,
+  messageDate: Timestamp,
+  roomId: Int
 )

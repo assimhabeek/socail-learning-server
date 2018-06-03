@@ -48,15 +48,26 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
             parameter('id) { id =>
               complete((StatusCodes.OK, publicationsRepo.findById(toInt(id).getOrElse(0))))
             },
+            parameter('user) { userId =>
+              complete((StatusCodes.OK, publicationsRepo.findByUser(toInt(userId).getOrElse(0))))
+            },
+            parameter('eid) { id =>
+              complete((StatusCodes.OK, publicationsRepo.findByIdExtanded(toInt(id).getOrElse(0)) map {
+                _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
+              }))
+            },
+            pathSuffix("reported") {
+              complete((StatusCodes.OK, publicationsRepo.findReported()))
+            },
             pathSuffix("stream") {
               userId += 1
               handleWebSocketMessages(flow(userId))
             },
             authenticatedUser { user =>
               parameter('fPage) { page =>
-                complete((StatusCodes.OK, publicationsRepo.findByPageAndFriend(toInt(page).getOrElse(0), user.id.get)map {
-                    _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
-                  }))
+                complete((StatusCodes.OK, publicationsRepo.findByPageAndFriend(toInt(page).getOrElse(0), user.id.get) map {
+                  _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
+                }))
               }
             }
 

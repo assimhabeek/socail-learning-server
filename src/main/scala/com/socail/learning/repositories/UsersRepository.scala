@@ -2,13 +2,15 @@ package com.socail.learning.repositories
 
 import javax.mail.internet.InternetAddress
 
-import com.socail.learning.domain.User
+import com.socail.learning.domain.{ OpinionOptions, User }
 import com.socail.learning.schema.SocialSchema
 import com.socail.learning.util.{ AuthenticationHandler, Mail }
 import courier.{ Multipart, Text }
 import org.mindrot.jbcrypt.BCrypt
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import spray.json
+import spray.json._
 
 import scala.concurrent.Future
 import scala.io.Source
@@ -52,6 +54,22 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
     )
   }
 
+  def findReported() = {
+    val query = opinions.filter(_.opinion === OpinionOptions.OPTION_REPORTED).groupBy(_.publicationId)
+    db.run(users.filter(user => {
+      user.id in publications.filter(pub => {
+        pub.id in query.map { case (id, row) => (id, row.length) }.map(_._1)
+      }).map(_.userId)
+    }).map(x => (x.id, x.lastName, x.firstName, publications.filter(pub => {
+      pub.id in query.map { case (id, row) => (id, row.length) }.map(_._1)
+    }).length)).result)
+      .recover {
+        case e: Exception =>
+          println(e.getMessage)
+          Seq()
+      }
+  }
+
   def validateAccount(id: Int): Future[Int] = {
     val query = for { c <- users if c.id === id } yield c.verified
     val action = query.update(Some(true))
@@ -91,6 +109,14 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
     val query = users.filter(_.id === user.id.getOrElse(0))
       .map(c => (c.about, c.firstName, c.lastName, c.year, c.specialtyId, c.profileImage))
     db.run(query.update(user.about, user.firstName, user.lastName, user.year, user.specialtyId, user.profileImage))
+  }
+
+  def filterUsers(filter: String, page: Int): Future[(Int, Seq[JsObject])] = {
+    val query = users.filter(x => x.lastName.indexOf(filter) >= 0
+      || x.firstName.indexOf(filter) >= 0
+      || x.email.indexOf(filter) >= 0
+      || x.username.indexOf(filter) >= 0)
+    db.run(query.drop(page * 10).take(10).result.map(y => query.length.result.map(i => (i, y.map(x => JsObject("id" -> JsNumber(x.id.getOrElse(0)), "lastName" -> JsString(x.lastName.getOrElse("")), "firstName" -> JsString(x.firstName.getOrElse("")), "profileImage" -> JsString(x.profileImage.getOrElse(Array()).map(_.toChar).mkString.replaceAll("\"", ""))))))).flatten)
   }
 
 }
