@@ -1,6 +1,7 @@
 package com.socail.learning.util
 
-import javax.mail.internet.InternetAddress
+import java.nio.charset.{ Charset, StandardCharsets }
+import javax.mail.internet.{ InternetAddress, MimeBodyPart }
 
 import courier._
 import Defaults._
@@ -20,7 +21,7 @@ object Mail {
       .from(sender)
       .to(to)
       .replyTo(sender)
-      .subject(subject)
+      .subject(subject, StandardCharsets.UTF_8)
       .content(content))
     message
   }

@@ -179,9 +179,13 @@ trait SocialSchema extends Db {
 
     def firstPerson = column[Option[Int]]("FIRST_PERSON_ID")
 
+    def creatorRead = column[Boolean]("creatorRead")
+
+    def firstPersonRead = column[Boolean]("firstPersonRead")
+
     def sender = foreignKey("ROOM_USER_FK", creatorId, users)(_.id, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.Cascade)
 
-    def * = (id, creatorId.getOrElse(0), firstPerson.getOrElse(0)) <> (Room.tupled, Room.unapply)
+    def * = (id, creatorId.getOrElse(0), firstPerson.getOrElse(0), creatorRead, firstPersonRead) <> (Room.tupled, Room.unapply)
 
   }
 
@@ -213,11 +217,13 @@ trait SocialSchema extends Db {
 
     def roomId = column[Option[Int]]("ROOM_ID")
 
+    def read = column[Boolean]("read")
+
     def user = foreignKey("US_RO_FX", userId, users)(_.id)
 
     def room = foreignKey("RO_US_FK", roomId, rooms)(_.id)
 
-    def * = (id, roomId.getOrElse(0), userId.getOrElse(0)) <> (UserRoom.tupled, UserRoom.unapply)
+    def * = (id, roomId.getOrElse(0), userId.getOrElse(0), read) <> (UserRoom.tupled, UserRoom.unapply)
 
   }
 

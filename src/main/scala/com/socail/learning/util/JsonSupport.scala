@@ -19,7 +19,7 @@ trait JsonSupport extends SprayJsonSupport {
   implicit val friendJsonFormat: RootJsonFormat[Friend] = jsonFormat4(Friend)
   implicit val chatRequestJsonFormat: RootJsonFormat[CallRequest] = jsonFormat4(CallRequest)
   implicit val chatMessageReceivedJsonFormat: RootJsonFormat[CallerIdReceived] = jsonFormat5(CallerIdReceived)
-  implicit val roomJsonFormat: RootJsonFormat[Room] = jsonFormat3(Room)
+  implicit val roomJsonFormat: RootJsonFormat[Room] = jsonFormat5(Room)
   implicit val chatJsonFormat: RootJsonFormat[Chat] = jsonFormat5(Chat)
   implicit val chatMessageJsonFormat: RootJsonFormat[ChatMessage] = jsonFormat2(ChatMessage)
 

@@ -11,7 +11,7 @@ import com.socail.learning.util.SLProtocal._
 import com.typesafe.config.ConfigFactory
 import spray.json._
 
-object FileRoutes extends JsonSupport with AuthenticationHandler {
+object FileRoutes extends JsonSupport {
 
   def tempDestination(fileInfo: FileInfo): File =
     File.createTempFile("upload-", fileInfo.fileName)

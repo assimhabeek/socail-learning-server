@@ -50,20 +50,27 @@ object ChatRoutes extends JsonSupport with AuthenticationHandler {
                 complete((StatusCodes.OK, chatRepo.getRoomsWithUsers(user.id.get)))
               }
             )
-          }, path("isRegistred") {
+          },
+          path("isRegistred") {
             parameter('roomId) { roomId =>
               get {
                 complete((StatusCodes.OK, chatRepo.isRegistredToRoom(toInt(roomId).getOrElse(0), user.id.get).map(x => s"$x")))
               }
             }
           },
-          path("messages") {
+          pathPrefix("messages") {
             concat(
               get {
-                parameter('roomId) { roomId =>
-                  val room = toInt(roomId).getOrElse(0)
-                  complete((StatusCodes.OK, chatRepo.getMessages(room)))
-                }
+                concat(
+                  pathSuffix("unRead") {
+                    complete((StatusCodes.OK, chatRepo.getUnReadMessages(user.id.get)))
+                  },
+                  parameter('roomId) { roomId =>
+                    val room = toInt(roomId).getOrElse(0)
+                    chatRepo.makeRoomReadForUser(user.id.get, room)
+                    complete((StatusCodes.OK, chatRepo.getMessages(room)))
+                  }
+                )
               },
               post {
                 entity(as[Chat]) { chat =>
@@ -77,14 +84,12 @@ object ChatRoutes extends JsonSupport with AuthenticationHandler {
           },
           path("roomUsers") {
             concat(
-              post {
-                parameter('room, 'user) { (room, user) =>
-                  val roomId = toInt(room).getOrElse(0)
-                  val userId = toInt(user).getOrElse(0)
-                  complete((StatusCodes.OK, chatRepo.addToRoom(roomId, userId).map(x => s"$x")))
+              get {
+                parameter('roomId) { roomId =>
+                  complete((StatusCodes.OK, chatRepo.getRoomUsers(toInt(roomId).getOrElse(0), user.id.get)))
                 }
               },
-              delete {
+              post {
                 parameter('room, 'user) { (room, user) =>
                   val roomId = toInt(room).getOrElse(0)
                   val userId = toInt(user).getOrElse(0)

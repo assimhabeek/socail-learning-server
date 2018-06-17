@@ -39,9 +39,9 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
           concat(
             parameter('page, 'filter.?, 'date.?, 'category.?, 'specialty.?, 'module.?, 'year.?) {
               (page, filter, date, category, specialty, module, year) =>
-                val databaseRecords: Future[Seq[JsObject]] =
-                  publicationsRepo.findByPage(toInt(page).getOrElse(0), filter, date, category, specialty, module, year) map {
-                    _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
+                val databaseRecords: Future[(Int, Seq[JsObject])] =
+                  publicationsRepo.findByPage(toInt(page).getOrElse(0), filter, date, category, specialty, module, year) map { s =>
+                    (s._1, s._2.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4)))))
                   }
                 complete((StatusCodes.OK, databaseRecords))
             },
@@ -64,9 +64,9 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
               handleWebSocketMessages(flow(userId))
             },
             authenticatedUser { user =>
-              parameter('fPage) { page =>
-                complete((StatusCodes.OK, publicationsRepo.findByPageAndFriend(toInt(page).getOrElse(0), user.id.get) map {
-                  _.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4))))
+              parameter('fPage, 'filter.?, 'date.?, 'category.?, 'specialty.?, 'module.?, 'year.?) { (page, filter, date, category, specialty, module, year) =>
+                complete((StatusCodes.OK, publicationsRepo.findByPageAndFriend(toInt(page).getOrElse(0), user.id.get, filter, date, category, specialty, module, year) map { s =>
+                  (s._1, s._2.map(t => JsObject(t._1.toJson.asJsObject.fields + ("user" -> t._2.toJson.asJsObject) + ("likes" -> JsNumber(t._3)) + ("dislikes" -> JsNumber(t._4)))))
                 }))
               }
             }
@@ -82,7 +82,7 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
                     usersRepo.findById(publication.userId)
                       .map(user => {
                         val us = user.get.toJson
-                        val pub = publication.toJson.asJsObject.fields
+                        val pub = publication.copy(id = Some(x)).toJson.asJsObject.fields
                         publicationAreaActor ! PublicationAddedOrUpdated(JsObject(pub + ("user" -> us.toJson)))
                         s"$x"
                       })
@@ -101,7 +101,7 @@ object PublicationsRoutes extends JsonSupport with AuthenticationHandler {
                         val us = user.get.toJson
                         val pub = publication.toJson.asJsObject.fields
                         publicationAreaActor ! PublicationAddedOrUpdated(JsObject(pub + ("user" -> us.toJson)))
-                        s"x"
+                        s"$x"
                       })
                   })))
                 else

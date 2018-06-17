@@ -120,7 +120,7 @@ object AuthRoutes extends JsonSupport with AuthenticationHandler {
                 complete((StatusCodes.OK, usersRepo.findReported()))
               },
               parameters('id) { id =>
-                complete((StatusCodes.OK, usersRepo.findById(toInt(id).getOrElse(0))))
+                complete((StatusCodes.OK, usersRepo.getWitEva(toInt(id).getOrElse(0))))
               },
               parameters('page, 'filter) { (page, filter) =>
                 complete((StatusCodes.OK, usersRepo.filterUsers(filter, toInt(page).getOrElse(0))))

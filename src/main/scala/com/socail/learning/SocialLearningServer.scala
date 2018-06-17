@@ -31,6 +31,7 @@ object SocialLearningServer extends App
   lazy val routes: Route =
     concat(
       PublicationsRoutes.routes,
+      FileRoutes.routes,
       AuthRoutes.routes,
       SpecialtiesRoutes.routes,
       ModulesRoutes.routes,
@@ -39,7 +40,6 @@ object SocialLearningServer extends App
       CommentsRoutes.routes,
       ChatRoutes.routes,
       OpinionsRoutes.routes,
-      FileRoutes.routes,
       FriendsRoutes.routes
     )
 

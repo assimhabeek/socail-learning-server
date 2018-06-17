@@ -56,7 +56,7 @@ object CommentsRoutes extends JsonSupport with AuthenticationHandler {
                     complete(publicationsRepo.findById(publId).map {
                       case Some(pub) => pub.userId match {
                         case `currentUserId` =>
-                          commentsRepo.markAsBes(publId, toInt(commId).getOrElse(0))
+                          commentsRepo.markAsBest(publId, toInt(commId).getOrElse(0))
                           (StatusCodes.OK, "")
                         case _ => (StatusCodes.Unauthorized, "")
                       }
@@ -72,7 +72,9 @@ object CommentsRoutes extends JsonSupport with AuthenticationHandler {
                         usersRepo.findById(comment.userId)
                           .map(use => {
                             val us = use.get.toJson
-                            val com = comment.toJson.asJsObject.fields
+                            val insertedComment = comment.copy(id = Some(x))
+                            val com = insertedComment.toJson.asJsObject.fields
+
                             commentAreaActor ! CommentAddedOrUpdated(JsObject(com + ("user" -> us.toJson)))
                             s"$x"
                           })

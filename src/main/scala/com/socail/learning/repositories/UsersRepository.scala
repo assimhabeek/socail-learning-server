@@ -1,6 +1,6 @@
 package com.socail.learning.repositories
 
-import javax.mail.internet.InternetAddress
+import javax.mail.internet.{ InternetAddress, MimeBodyPart }
 
 import com.socail.learning.domain.{ OpinionOptions, User }
 import com.socail.learning.schema.SocialSchema
@@ -11,6 +11,7 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import spray.json
 import spray.json._
+import com.socail.learning.util.SLProtocal._
 
 import scala.concurrent.Future
 import scala.io.Source
@@ -47,10 +48,12 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
     val stream = getClass.getResourceAsStream("/ValidateEmailTemplate.html")
     val template: String = Source.fromInputStream(stream).getLines().mkString.replace("TOKEN", token)
     stream.close()
+    val body = new MimeBodyPart()
+    body.setContent(template, "text/html; charset=utf-8")
     Mail.sendMail(
       new InternetAddress(email),
       "NTIC-SL : Vérification de l'E-mail",
-      Multipart().html(template)
+      Multipart().add(body)
     )
   }
 
@@ -82,10 +85,12 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
     val template: String = Source.fromInputStream(stream).getLines().mkString.replace("NEW_PASSWORD", newPasssword)
     stream.close()
     changeUserPassword(id, newPasssword)
+    val body = new MimeBodyPart()
+    body.setContent(template, "text/html; charset=utf-8")
     Mail.sendMail(
       new InternetAddress(email),
       "NTIC-SL : Récupération de mot de passe",
-      Multipart().html(template)
+      Multipart().add(body)
     )
   }
 
@@ -109,6 +114,23 @@ class UsersRepository(override val config: DatabaseConfig[JdbcProfile])
     val query = users.filter(_.id === user.id.getOrElse(0))
       .map(c => (c.about, c.firstName, c.lastName, c.year, c.specialtyId, c.profileImage))
     db.run(query.update(user.about, user.firstName, user.lastName, user.year, user.specialtyId, user.profileImage))
+  }
+
+  def getEva(id: Int): Future[Int] = db.run(publications.filter(_.userId === id).length.result).recover {
+    case e: Exception =>
+      println(e.getMessage)
+      0
+  }
+
+  def getWitEva(uid: Int): Future[JsObject] = {
+    findById(uid) flatMap {
+      case Some(us) => getEva(us.id.get).map(g => {
+        JsObject(us.toJson.asJsObject.fields + ("eve" -> JsNumber(g)))
+      })
+      case None => Future {
+        JsObject.empty
+      }
+    }
   }
 
   def filterUsers(filter: String, page: Int): Future[(Int, Seq[JsObject])] = {

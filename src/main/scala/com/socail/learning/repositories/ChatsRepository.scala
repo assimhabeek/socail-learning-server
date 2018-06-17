@@ -18,6 +18,11 @@ class ChatsRepository(override val config: DatabaseConfig[JdbcProfile])
   override def schema(): TableQuery[BasicRow[Chat]] =
     chats.asInstanceOf[TableQuery[BasicRow[Chat]]]
 
+  override def insert(item: Chat) = {
+    unReadRoom(item.roomId)
+    super.insert(item)
+  }
+
   def createRoom(room: Room): Future[Int] = {
     val query = rooms.filter(x => ((x.creatorId === room.creator && x.firstPerson === room.firstPerson) ||
       (x.creatorId === room.firstPerson && x.firstPerson === room.creator)) && !x.id.in(userRooms.map(_.roomId)))
@@ -30,11 +35,7 @@ class ChatsRepository(override val config: DatabaseConfig[JdbcProfile])
   }
 
   def addToRoom(room: Int, userId: Int): Future[Int] = {
-    db.run(userRooms returning userRooms.map(_.id.get) += UserRoom(None, room, userId))
-  }
-
-  def removeFromRoom(room: Int, userId: Int): Future[Int] = {
-    db.run(userRooms.filter(x => x.roomId === room && x.userId === userId).delete)
+    db.run(userRooms returning userRooms.map(_.id.get) += UserRoom(None, room, userId, read = false))
   }
 
   def isRegistredToRoom(room: Int, userId: Int): Future[Boolean] = {
@@ -70,6 +71,28 @@ class ChatsRepository(override val config: DatabaseConfig[JdbcProfile])
 
   def getMessages(roomId: Int): Future[Seq[Chat]] = {
     db.run(chats.filter(_.roomId === roomId).sortBy(_.messageDate).result)
+  }
+
+  def makeRoomReadForUser(userId: Int, roomId: Int): Future[Unit] = {
+    db.run(DBIO.seq(
+      rooms.filter(x => x.creatorId === userId && x.id === roomId).map(_.creatorRead).update(true),
+      rooms.filter(x => x.firstPerson === userId && x.id === roomId).map(_.firstPersonRead).update(true),
+      userRooms.filter(x => x.userId === userId && x.roomId === roomId).map(_.read).update(true)
+    ))
+  }
+
+  def unReadRoom(roomId: Int): Future[Unit] = {
+    db.run(DBIO.seq(
+      rooms.filter(x => x.id === roomId).map(x => (x.creatorRead, x.firstPersonRead)).update((false, false)),
+      userRooms.filter(_.roomId === roomId).map(_.read).update(false)
+    ))
+  }
+
+  def getUnReadMessages(userId: Int): Future[Seq[Chat]] = {
+    db.run(chats.filter(message => {
+      message.roomId.in(userRooms.filter(x => x.userId === userId && !x.read).map(_.id)) ||
+        message.roomId.in(rooms.filter(x => (x.creatorId === userId && !x.creatorRead) || (x.firstPerson === userId && !x.firstPersonRead)).map(_.id))
+    }).sortBy(_.messageDate).result)
   }
 
 }
